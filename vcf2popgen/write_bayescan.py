@@ -1,7 +1,7 @@
 import sys
 import allel as al
 import numpy as np
-   
+ 
 def write_bayescan(input_file, sample_map_file, bayescan_file, header = True):
     """
     Writes an input file for BayeScan from a VCF file containing
