@@ -6,7 +6,7 @@ def write_bayescan(input_file, sample_map_file, bayescan_file, header = True):
     """
     Writes an input file for BayeScan from a VCF file containing
     bi-allelic SNP data and a sample map file in CSV format. By default the
-    sample map file is assumed to have a header ()
+    sample map file is assumed to have a header.
     """
     try: 
         vcf = al.read_vcf(input_file)
