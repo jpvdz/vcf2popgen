@@ -1,5 +1,3 @@
-import numpy as np
-
 def to_nucleotides(variants, ref, alt):
     """Encode bi-allelic variants stored as 0 (reference allele) or 1 
     (alternate allele) as nucleotides.
@@ -18,27 +16,29 @@ def to_nucleotides(variants, ref, alt):
     nucs
         NumPy array of nucleotides encoded as strings.
     """
-    is_ref = ~np.array(variants, dtype=bool)
-    is_alt = np.array(variants, dtype=bool)
+    is_ref = variants == 0
+    is_alt = variants > 0
 
     nucs = (ref * is_ref) + (alt * is_alt)
 
     return nucs
 
-def recode_nucleotides(nucs):
-    """Recodes nucleotides as integers. Encodes missing data as -9.
+
+def recode_nucleotides(nucs, miss_encode = -9):
+    """Recodes nucleotides as integers.
     
     Parameters
     ----------
     nucs
         NumPy array of nucleotides encoded as strings.
-    
+    miss_encode
+        Integer used to encode missing data. Defaults to -9.
     Returns
     -------
     recoded_nucs
         NumPy array of nucleotides encoded as integers.
     """
-    nuc_codes = {'A': 1, 'T': 2, 'C': 3, 'G': 4, '' : -9}
+    nuc_codes = {'A': 1, 'T': 2, 'C': 3, 'G': 4, '' : miss_encode}
 
     is_A = nucs == 'A'
     is_T = nucs == 'T'
@@ -79,4 +79,3 @@ def _create_pop_dict(sample_map):
         pop_dict[pop_label] = pop_id + 1
 
     return pop_dict
-

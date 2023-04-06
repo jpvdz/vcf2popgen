@@ -53,7 +53,6 @@ def write_structure(input_file, sample_map_file, output_file, one_row_per_sample
     ref_allele = vcf['variants/REF']
     alt_allele = vcf['variants/ALT'].transpose()[0]
 
-    sample_selection = np.array(sample_map['sample_id'])    
     pops = np.array([
         sample_map[sample_id] for sample_id in vcf['samples']
     ])
@@ -66,7 +65,7 @@ def write_structure(input_file, sample_map_file, output_file, one_row_per_sample
             fh.write(f'\t\t{variant_cols}\n')
 
             for i, sample_id in enumerate(sample_ids):
-                if sample_id in sample_selection:
+                if sample_id in sample_map.keys():
                     alleles_recoded0 = recode_nucleotides(to_nucleotides(gt[:, i][:, 0], ref_allele, alt_allele))
                     alleles_recoded1 = recode_nucleotides(to_nucleotides(gt[:, i][:, 1], ref_allele, alt_allele))
 
@@ -89,7 +88,7 @@ def write_structure(input_file, sample_map_file, output_file, one_row_per_sample
             fh.write(f'\t\t{variant_cols}\n')
 
             for i, sample_id in enumerate(sample_ids):
-                if sample_id in sample_selection:
+                if sample_id in sample_map.keys():
                     alleles_recoded0 = recode_nucleotides(to_nucleotides(gt[:, i][:, 0], ref_allele, alt_allele))
                     alleles_recoded1 = recode_nucleotides(to_nucleotides(gt[:, i][:, 1], ref_allele, alt_allele))
                     alleles_recoded = np.ravel([alleles_recoded0, alleles_recoded1], order = 'F')

@@ -48,7 +48,6 @@ def write_genepop(input_file, sample_map_file, output_file, header = True):
     ref_allele = vcf['variants/REF']
     alt_allele = vcf['variants/ALT'].transpose()[0]
 
-    sample_selection = np.array(sample_map['sample_id'])
     pops = np.array([
         sample_map[sample_id] for sample_id in vcf['samples']
     ])
@@ -60,9 +59,9 @@ def write_genepop(input_file, sample_map_file, output_file, header = True):
     genotypes = []
 
     for i, sample_id in enumerate(sample_ids):
-        if sample_id in sample_selection:
-            allele0 = np.array(recode_nucleotides(to_nucleotides(gt[:, i][:, 0], ref_allele, alt_allele))).astype(str)
-            allele1 = np.array(recode_nucleotides(to_nucleotides(gt[:, i][:, 1], ref_allele, alt_allele))).astype(str)
+        if sample_id in sample_map.keys():
+            allele0 = np.array(recode_nucleotides(to_nucleotides(gt[:, i][:, 0], ref_allele, alt_allele), miss_encode = 0)).astype(str)
+            allele1 = np.array(recode_nucleotides(to_nucleotides(gt[:, i][:, 1], ref_allele, alt_allele), miss_encode = 0)).astype(str)
 
             genotype = ' '.join(np.char.add(np.char.add(np.zeros(len(allele0), dtype = 'int8').astype(str), allele0), 
                 np.char.add(np.zeros(len(allele1), dtype = 'int8').astype(str), allele1)))
