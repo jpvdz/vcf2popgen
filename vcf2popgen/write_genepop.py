@@ -1,123 +1,132 @@
 import sys
-import allel
+import allel as al
 import numpy as np
 import pandas as pd
 
-def get_nucleotide(variants, ref, alt):
-
-    '''
-    Determines the nucleotide of each variant.  
-    '''
-
-    # create boolean vectors encoding whether a variant is the reference or the alternate allele
+def to_nucleotides(variants, ref, alt):
+    """Encode bi-allelic variants stored as 0 (reference allele) or 1 
+    (alternate allele) as nucleotides.
+    
+    Parameters
+    ----------
+    variants
+        NumPy array of bi-allelic variants encoded as 0's and 1's.
+    ref
+        NumPy array of reference allele nucleotides encoded as strings.
+    alt
+        NumPy array of alternate allele nucleotides encoded as strings.
+        
+    Returns
+    -------
+    nucs
+        NumPy array of nucleotides encoded as strings.
+    """
     is_ref = ~np.array(variants, dtype=bool)
     is_alt = np.array(variants, dtype=bool)
 
-    # determine nucleotides
-    nucleotides = (ref * is_ref) + (alt * is_alt)
+    nucs = (ref * is_ref) + (alt * is_alt)
 
-    # return nucleotides
-    return(nucleotides)
+    return nucs
 
 
-def recode_nucleotides(nucleotides):
+def recode_nucleotides(nucs):
+    """Recodes nucleotides as integers. Encodes missing data as -9.
     
-    '''
-    Recodes nucleotides to integers. Missing data is encoded as -9.
-    '''
+    Parameters
+    ----------
+    nucs
+        NumPy array of nucleotides encoded as strings.
     
-    # create dictionary encoding nucleotides as integers
-    nucleotide_codes = {'A': 1, 'T': 2, 'C': 3, 'G': 4, '' : -9}
+    Returns
+    -------
+    recoded_nucs
+        NumPy array of nucleotides encoded as integers.
+    """
+    nuc_codes = {'A': 1, 'T': 2, 'C': 3, 'G': 4, '' : -9}
 
-    # create boolean vectors for nucleotides and missing data
-    is_A = nucleotides == 'A'
-    is_T = nucleotides == 'T'
-    is_C = nucleotides == 'C'
-    is_G = nucleotides == 'G'
-    is_N = nucleotides == ''
+    is_A = nucs == 'A'
+    is_T = nucs == 'T'
+    is_C = nucs == 'C'
+    is_G = nucs == 'G'
+    is_N = nucs == ''
 
-    # recode nucleotides
-    nucleotides_recoded = (
-        (is_A * nucleotide_codes['A']) +
-        (is_T * nucleotide_codes['T']) +
-        (is_C * nucleotide_codes['C']) +
-        (is_G * nucleotide_codes['G']) +
-        (is_N * nucleotide_codes[''])
+    recoded_nucs = (
+        (is_A * nuc_codes['A']) +
+        (is_T * nuc_codes['T']) +
+        (is_C * nuc_codes['C']) +
+        (is_G * nuc_codes['G']) +
+        (is_N * nuc_codes[''])
     )
 
-    # return recoded nucleotides
-    return(nucleotides_recoded)
+    return recoded_nucs
 
 
-def create_pop_dict(pop_map):
-
-    ''' 
-    Creates a population dictionary that maps unique population labels
-    to a population ID encoded as integer.
-    '''
-
-    # create empty population dictionary
+def create_pop_dict(sample_map):
+    """Create a population dictionary with unique population labels
+    mapped to integers.
+    
+    Parameters
+    ----------
+    sample_map
+        Pandas dataframe or series that contains a column labeled 'pop_id'
+        containing population labels encoded as strings.
+        
+    Returns
+    -------
+    pop_dict
+        Dictionary of population labels (keys) and population IDs (values)
+        encoded as integers.
+    """
     pop_dict = {}
 
-    # enumerate over population column
-    for pop_id, pop_label in enumerate(pop_map['population'].unique()):
-
-        # labels as keys and IDs as values
+    for pop_id, pop_label in enumerate(sample_map['pop_id'].unique()):
         pop_dict[pop_label] = pop_id + 1
 
-    # return population dictionary
-    return(pop_dict)
+    return pop_dict
 
 
-def write_genepop(vcf_file, pop_map_file, genepop_file):
+def write_genepop(input_file, sample_map_file, output_file):
+    """Write bi-allelic variant calls to an output file in GENEPOP format.
+    
+    Parameters
+    ----------
+    input_file
+        A VCF file containing bi-allelic variant calls.
+    sample_map_file
+        A sample map file in CSV format. The first column should contain sample
+        IDs, the second population IDs encoded as integers. 
+    output_file
+        The name of the output file.
+    """
+    vcf = al.read_vcf(input_file)
+    sample_map = pd.read_csv(sample_map_file)
+    
+    gt = al.GenotypeArray(vcf['calldata/GT'])
 
-    '''
-    Writes a GENEPOP file. 
-    '''
-
-    # import data
-    vcf = allel.read_vcf(vcf_file)
-    pop_map = pd.read_csv(pop_map_file)
-
-    # convert to genotype array
-    gt = allel.GenotypeArray(vcf['calldata/GT'])
-
-    # read sample IDs to be included from population map
     sample_ids = vcf['samples']
     ref_allele = vcf['variants/REF']
     alt_allele = vcf['variants/ALT'].transpose()[0]
 
-    sample_selection = np.array(pop_map['sample_id'])
+    sample_selection = np.array(sample_map['sample_id'])
 
-    # create population dictionary
-    pop_dict = create_pop_dict(pop_map)
+    pop_dict = create_pop_dict(sample_map)
 
-    # set SNP IDs
-    snp_ids = [f'snp_{x+1}' for x in range(len(vcf['variants/ID']))]
+    variant_ids = [f"variant_{x+1}" for x in range(len(vcf['variants/ID']))]
 
-    # create empty lists for sample IDs, population IDs and genotypes encoded in genepop format
     samples = []
     populations = []
     genotypes = []
 
-    # loop over sample IDs
     for i, sample_id in enumerate(sample_ids):
-
-        # check if sample ID should be included, else skip sample
         if sample_id in sample_selection:
+            pop_id = pop_dict[sample_map.loc[sample_map['sample_id'] == sample_id]['pop_id'].values[0]]
 
-            # get population ID from population dictionary
-            pop_id = pop_dict[pop_map.loc[pop_map['sample_id'] == sample_id]['population'].values[0]]
+            allele0 = np.array(recode_nucleotides(to_nucleotides(gt[:, i][:, 0], ref_allele, alt_allele))).astype(str)
+            allele1 = np.array(recode_nucleotides(to_nucleotides(gt[:, i][:, 1], ref_allele, alt_allele))).astype(str)
 
-            # get alleles and convert characters characters
-            allele0 = np.array(recode_nucleotides(get_nucleotide(gt[:, i][:, 0], ref_allele, alt_allele))).astype(str)
-            allele1 = np.array(recode_nucleotides(get_nucleotide(gt[:, i][:, 1], ref_allele, alt_allele))).astype(str)
-
-            # combine alleles, add padding and convert to string
             genotype = ' '.join(np.char.add(np.char.add(np.zeros(len(allele0), dtype = 'int8').astype(str), allele0), 
                 np.char.add(np.zeros(len(allele1), dtype = 'int8').astype(str), allele1)))
 
-            # append samples, populations and genotypes
             samples.append(sample_id)
             populations.append(pop_id)
             genotypes.append(genotype)
@@ -125,54 +134,37 @@ def write_genepop(vcf_file, pop_map_file, genepop_file):
         else:
             continue
 
-    # combine sample IDs, population IDs and genotypes
     results = np.vstack((np.asarray(populations), np.asarray(samples), np.asarray(genotypes))).T
-
-    # sort results on population ID
     sorted_results = results[results[:, 0].argsort()]
 
-    # write genepop file
-    with open(genepop_file, 'w') as fh:
+    with open(output_file, 'w') as fh:
+        fh.write(f"Title line: GENEPOP file created from {input_file}\n")
 
-        # write title line
-        fh.write(f'Title line: GENEPOP file created from {vcf_file}\n')
-
-        # write SNP IDs
-        for snp_id in snp_ids:
-            fh.write(f'{snp_id}\n')
+        for variant_id in variant_ids:
+            fh.write(f'{variant_id}\n')
             
-        # loop over rows of sorted_results matrix
         for i in range(0, len(sorted_results)):
-
             pop_id = sorted_results[i][0]
             sample_id = sorted_results[i][1]
             genotype = sorted_results[i][2]
 
-            # on first iteration write POP statement in genepop file
             if i == 0:
-                fh.write(f'POP\n')
+                fh.write(f"POP\n")
             
-            # for subsequent iterations compare current population ID to previous one
             elif i > 0:
                 prev_pop = sorted_results[i-1][0]
-
-                # write POP statement if current and previous population IDs differ                
                 if pop_id != prev_pop:
-                    fh.write(f'POP\n')
+                    fh.write(f"POP\n")
             
-            # write sample IDs and genotypes
-            fh.write(f'{sample_id}, {genotype}\n')
+            fh.write(f"{sample_id}, {genotype}\n")
 
 
 def main():
+    input_file = sys.argv[1]
+    sample_map_file = sys.argv[2]
+    output_file = sys.argv[3]
 
-    # read command line args
-    vcf_file = sys.argv[1]
-    pop_map_file = sys.argv[2]
-    genepop_file = sys.argv[3]
-
-    # convert vcf to structure
-    write_genepop(vcf_file, pop_map_file, genepop_file)
+    write_genepop(input_file, sample_map_file, output_file)
 
 
 if __name__ == "__main__":

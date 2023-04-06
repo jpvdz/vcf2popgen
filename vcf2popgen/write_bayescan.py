@@ -2,11 +2,20 @@ import sys
 import allel as al
 import numpy as np
  
-def write_bayescan(input_file, sample_map_file, bayescan_file, header = True):
-    """
-    Writes an input file for BayeScan from a VCF file containing
-    bi-allelic SNP data and a sample map file in CSV format. By default the
-    sample map file is assumed to have a header.
+def write_bayescan(input_file, sample_map_file, output_file, header = True):
+    """Write bi-allelic variant calls to an output file in BAYESCAN format.
+    
+    Parameters
+    ----------
+    input_file
+        A VCF file containing bi-allelic variant calls.
+    sample_map_file
+        A sample map file in CSV format. The first column should contain sample
+        IDs, the second population IDs encoded as integers. 
+    output_file
+        The name of the output file.
+    header
+        Whether the sample map contains a header. Defaults to True.
     """
     try: 
         vcf = al.read_vcf(input_file)
@@ -41,7 +50,7 @@ def write_bayescan(input_file, sample_map_file, bayescan_file, header = True):
         sample_map[sample_id] for sample_id in vcf['samples']
     ])
     
-    with open(bayescan_file, 'w') as fh:
+    with open(output_file, 'w') as fh:
         fh.write(f"[loci]={len(gt)}\n\n")
         fh.write(f"[populations]={len(set(sample_map.values()))}\n\n")
         
@@ -54,7 +63,6 @@ def write_bayescan(input_file, sample_map_file, bayescan_file, header = True):
 
 
 def main():
-    
     input_file = sys.argv[1]
     sample_map_file = sys.argv[2]
     output_file = sys.argv[3]
