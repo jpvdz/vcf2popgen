@@ -1,7 +1,6 @@
 import sys
 import allel as al
 import numpy as np
-import pandas as pd
 from vcf2popgen.utils import to_nucleotides, recode_nucleotides
 
 def write_genepop(input_file, sample_map_file, output_file, header = True):
