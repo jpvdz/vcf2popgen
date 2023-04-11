@@ -1,4 +1,3 @@
-import sys
 import allel as al
 import numpy as np
 from .utils import to_nucleotides, recode_nucleotides
@@ -95,15 +94,3 @@ def write_genepop(input_file, sample_map_file, output_file, header = True):
                     fh.write(f"POP\n")
             
             fh.write(f"{sample_id}, {genotype}\n")
-
-
-def main():
-    input_file = sys.argv[1]
-    sample_map_file = sys.argv[2]
-    output_file = sys.argv[3]
-
-    write_genepop(input_file, sample_map_file, output_file)
-
-
-if __name__ == "__main__":
-    main()

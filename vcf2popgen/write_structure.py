@@ -1,4 +1,3 @@
-import sys
 import allel as al
 import numpy as np
 from .utils import to_nucleotides, recode_nucleotides
@@ -101,16 +100,3 @@ def write_structure(input_file, sample_map_file, output_file, one_row_per_sample
 
     else:        
         print('Warning: invalid argument specified.')
-
-
-def main():
-    input_file = sys.argv[1]
-    sample_map_file = sys.argv[2]
-    output_file = sys.argv[3]
-    one_row_per_sample = sys.argv[4]
-
-    write_structure(input_file, sample_map_file, output_file, one_row_per_sample)
-
-
-if __name__ == "__main__":
-    main()

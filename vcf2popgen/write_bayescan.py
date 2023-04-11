@@ -1,4 +1,3 @@
-import sys
 import allel as al
 import numpy as np
  
@@ -60,15 +59,3 @@ def write_bayescan(input_file, sample_map_file, output_file, header = True):
             for j, count in enumerate(counts):
                 fh.write(f"{j+1} {count[0] + count[1]} 2 {count[0]} {count[1]}\n")
             fh.write("\n")
-
-
-def main():
-    input_file = sys.argv[1]
-    sample_map_file = sys.argv[2]
-    output_file = sys.argv[3]
-    
-    write_bayescan(input_file, sample_map_file, output_file)
-
-
-if __name__ == "__main__":
-    main()
