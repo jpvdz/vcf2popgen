@@ -1,7 +1,7 @@
 import sys
 import allel as al
 import numpy as np
-from vcf2popgen.utils import to_nucleotides, recode_nucleotides
+from .utils import to_nucleotides, recode_nucleotides
 
 def write_genepop(input_file, sample_map_file, output_file, header = True):
     """Write bi-allelic variant calls to an output file in GENEPOP format.
