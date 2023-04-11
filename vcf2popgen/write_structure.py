@@ -2,25 +2,25 @@ import allel as al
 import numpy as np
 from .utils import to_nucleotides, recode_nucleotides
 
-def write_structure(input_file, sample_map_file, output_file, one_row_per_sample = False, header = True):
+def write_structure(input_file : str, sample_map_file : str, output_file : str,
+                    one_row_per_sample : bool = False, header : bool = True) -> None:
     """Write bi-allelic variant calls to an output file in GENEPOP format.
     
     Parameters
     ----------
-    input_file
-        A VCF file containing bi-allelic variant calls.
-    sample_map_file
-        A sample map file in CSV format. The first column should contain sample
+    input_file : str
+        Path to a VCF file containing bi-allelic variant calls.
+    sample_map_file : str
+        Path to a sample map file in CSV format. The first column should contain sample
         IDs, the second population IDs encoded as integers. 
-    output_file
-        The name of the output file.
-    one_row_per_sample
+    output_file : str
+        The desired output file name/path.
+    one_row_per_sample : bool
         Whether samples should be encoded on a single row, which results in two
         columns per locus (one for each allele). Defaults to False.
-    header
+    header : bool
         Whether the sample map contains a header. Defaults to True.
     """
-
     try: 
         vcf = al.read_vcf(input_file)
     except:

@@ -2,18 +2,21 @@ import allel as al
 import numpy as np
 from .utils import to_nucleotides, recode_nucleotides
 
-def write_genepop(input_file, sample_map_file, output_file, header = True):
+def write_genepop(input_file : str, sample_map_file : str, output_file : str, 
+                  header : bool = True) -> None:
     """Write bi-allelic variant calls to an output file in GENEPOP format.
     
     Parameters
     ----------
-    input_file
-        A VCF file containing bi-allelic variant calls.
-    sample_map_file
-        A sample map file in CSV format. The first column should contain sample
+    input_file : str
+        Path to a VCF file containing bi-allelic variant calls.
+    sample_map_file : str
+        Path to a sample map file in CSV format. The first column should contain sample
         IDs, the second population IDs encoded as integers. 
-    output_file
-        The name of the output file.
+    output_file : str
+        The desired output file name/path.
+    header : bool
+        Whether the sample map contains a header. Defaults to True.
     """
     try: 
         vcf = al.read_vcf(input_file)

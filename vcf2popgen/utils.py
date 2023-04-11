@@ -1,19 +1,21 @@
-def to_nucleotides(variants, ref, alt):
+import numpy.typing as npt
+
+def to_nucleotides(variants : npt.ArrayLike, ref : npt.ArrayLike, alt : npt.ArrayLike) -> npt.ArrayLike:
     """Encode bi-allelic variants stored as 0 (reference allele) or 1 
     (alternate allele) as nucleotides.
     
     Parameters
     ----------
-    variants
+    variants : npt.ArrayLike
         NumPy array of bi-allelic variants encoded as 0's and 1's.
-    ref
+    ref : npt.ArrayLike
         NumPy array of reference allele nucleotides encoded as strings.
-    alt
+    alt : npt.ArrayLike
         NumPy array of alternate allele nucleotides encoded as strings.
         
     Returns
     -------
-    nucs
+    nucs : npt.ArrayLike
         NumPy array of nucleotides encoded as strings.
     """
     is_ref = variants == 0
@@ -24,18 +26,18 @@ def to_nucleotides(variants, ref, alt):
     return nucs
 
 
-def recode_nucleotides(nucs, miss_encode = -9):
+def recode_nucleotides(nucs : npt.ArrayLike, miss_encode : int = -9) -> npt.ArrayLike:
     """Recodes nucleotides as integers.
     
     Parameters
     ----------
-    nucs
+    nucs : npt.ArrayLike
         NumPy array of nucleotides encoded as strings.
-    miss_encode
+    miss_encode : int
         Integer used to encode missing data. Defaults to -9.
     Returns
     -------
-    recoded_nucs
+    recoded_nucs : npt.ArrayLike
         NumPy array of nucleotides encoded as integers.
     """
     nuc_codes = {'A': 1, 'T': 2, 'C': 3, 'G': 4, '' : miss_encode}
@@ -55,27 +57,3 @@ def recode_nucleotides(nucs, miss_encode = -9):
     )
 
     return recoded_nucs
-
-
-def _create_pop_dict(sample_map):
-    """Create a population dictionary with unique population labels
-    mapped to integers.
-    
-    Parameters
-    ----------
-    sample_map
-        Pandas dataframe or series that contains a column labeled 'pop_id'
-        containing population labels encoded as strings.
-        
-    Returns
-    -------
-    pop_dict
-        Dictionary of population labels (keys) and population IDs (values)
-        encoded as integers.
-    """
-    pop_dict = {}
-
-    for pop_id, pop_label in enumerate(sample_map['pop_id'].unique()):
-        pop_dict[pop_label] = pop_id + 1
-
-    return pop_dict
