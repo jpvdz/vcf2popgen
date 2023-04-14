@@ -1,3 +1,1 @@
-from vcf2popgen.write_bayescan import write_bayescan
-from vcf2popgen.write_genepop import write_genepop
-from vcf2popgen.write_structure import write_structure
+from vcf2popgen.io import read, write

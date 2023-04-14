@@ -1,3 +1,4 @@
+import numpy as np
 import numpy.typing as npt
 
 def to_nucleotides(variants : npt.ArrayLike, ref : npt.ArrayLike, alt : npt.ArrayLike) -> npt.ArrayLike:
