@@ -17,6 +17,7 @@ class PopGenData:
         self.ploidy = self.genotypes.shape[2]
         
         self.nucleotide_array = self._to_nucleotide_array()
+        self.nucleotide_recoded = self._recode_nucleotides()
         
 
     def summary(self):
@@ -34,25 +35,17 @@ class PopGenData:
         return (self.genotypes == 0) * ref_array + (self.genotypes == 1) * alt_array
     
     
-    # def _recode_nucleotides(self, missing = -9):
+    def _recode_nucleotides(self, missing = -9):
         
-    #     nuc_codes = {'A': 1, 'T': 2, 'C': 3, 'G': 4, '' : missing}
+        encoding = {'A': 1, 'T': 2, 'C': 3, 'G': 4, '' : missing}
 
-    #     is_A = self.nucleotide_array == 'A'
-    #     is_T = self.nucleotide_array == 'T'
-    #     is_C = self.nucleotide_array == 'C'
-    #     is_G = self.nucleotide_array == 'G'
-    #     is_N = self.nucleotide_array == ''
-
-    #     recoded_nucleotides = (
-    #         (is_A * nuc_codes['A']) +
-    #         (is_T * nuc_codes['T']) +
-    #         (is_C * nuc_codes['C']) +
-    #         (is_G * nuc_codes['G']) +
-    #         (is_N * nuc_codes[''])
-    #     )
-
-    #     return recoded_nucleotides
+        return (
+            ((self.nucleotide_array == 'A') * encoding['A']) +
+            ((self.nucleotide_array == 'T') * encoding['T']) +
+            ((self.nucleotide_array == 'C') * encoding['C']) +
+            ((self.nucleotide_array == 'G') * encoding['G']) +
+            ((self.nucleotide_array == '') * encoding[''])
+        )
 
         
     # def to_bayescan(self, output_file):
@@ -237,3 +230,23 @@ def test_nucleotide_array():
           ['T', 'T']]], dtype = object
     )
     assert (test_data.nucleotide_array == test_nucs).all()
+
+
+def test_recode_nucleotides():
+    test_data = create_test_data()
+    test_recoded_nucs = np.array(
+        [[[2, 1], 
+          [2, 2], 
+          [1, 1]],
+         [[3, 3], 
+          [4, 3],
+          [3, 3]],
+         [[4, 1], 
+          [4, 4], 
+          [1, 1]],
+         [[2, 2], 
+          [3, 3], 
+          [2, 2]]], dtype = int
+    )
+    assert (test_data.nucleotide_recoded == test_recoded_nucs).all()
+    
