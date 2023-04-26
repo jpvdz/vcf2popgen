@@ -1,1 +1,1 @@
-from vcf2popgen.io import read, write
+from vcf2popgen.io import read
