@@ -1,50 +1,61 @@
 import allel as al
 import numpy as np
 
+class Variants:
+    def __init__(self, variants):
+        self.variants = variants
+    
+    
+    def to_ndarray(self, n_loci, n_samples, ploidy):
+        return np.repeat(
+            self.variants, 
+            n_samples * ploidy,
+            axis = 0).reshape(
+                n_loci,
+                n_samples,
+                ploidy
+            )
+        
+
 class PopGenData:
-    def __init__(self, samples, populations, genotypes, ref_allele, alt_allele):
+    def __init__(self, samples, populations, genotypes : al.GenotypeArray, ref_variants : Variants, alt_variants : Variants):
         self.samples = samples
         self.populations = populations
         self.genotypes = genotypes
-        
-        self.alleles = {
-            'REF' : ref_allele,
-            'ALT' : alt_allele
-        }
-        
-        self.n_loci = self.genotypes.shape[0]
-        self.n_samples = self.genotypes.shape[1]
-        self.ploidy = self.genotypes.shape[2]
-        
-        self.nucleotide_array = self._to_nucleotide_array()
-        self.nucleotide_recoded = self._recode_nucleotides()
+        self.ref_variants = ref_variants
+        self.alt_variants = alt_variants
         
 
-    def summary(self):
-        print(f"Number of loci: {self.n_loci}")
-        print(f"Number of samples: {self.n_samples}")
-        print(f"Ploidy: {self.ploidy}")
+    def n_loci(self):
+        return self.genotypes.shape[0]
     
     
-    def _resize_alleles(self, allele_type):
-        return np.repeat(self.alleles[allele_type], self.n_samples * self.ploidy, axis = 0).reshape(self.n_loci, self.n_samples, self.ploidy)
+    def n_samples(self):
+        return self.genotypes.shape[1]
     
     
-    def _to_nucleotide_array(self):
-        ref_array, alt_array = map(self._resize_alleles, ('REF', 'ALT'))
-        return (self.genotypes == 0) * ref_array + (self.genotypes == 1) * alt_array
+    def ploidy(self):
+        return self.genotypes.shape[2]
+
+    
+    def to_nucleotide_array(self):
+        ref_ndarray = self.ref_variants.to_ndarray(self.n_loci(), self.n_samples(), self.ploidy())
+        alt_ndarray = self.alt_variants.to_ndarray(self.n_loci(), self.n_samples(), self.ploidy())
+        return (self.genotypes == 0) * ref_ndarray + (self.genotypes == 1) * alt_ndarray
     
     
-    def _recode_nucleotides(self, missing = -9):
+    def recode_nucleotides(self, missing = -9):
         
         encoding = {'A': 1, 'T': 2, 'C': 3, 'G': 4, '' : missing}
 
+        nuc_array = self.to_nucleotide_array()
+        
         return (
-            ((self.nucleotide_array == 'A') * encoding['A']) +
-            ((self.nucleotide_array == 'T') * encoding['T']) +
-            ((self.nucleotide_array == 'C') * encoding['C']) +
-            ((self.nucleotide_array == 'G') * encoding['G']) +
-            ((self.nucleotide_array == '') * encoding[''])
+            ((nuc_array == 'A') * encoding['A']) +
+            ((nuc_array == 'T') * encoding['T']) +
+            ((nuc_array == 'C') * encoding['C']) +
+            ((nuc_array == 'G') * encoding['G']) +
+            ((nuc_array == '') * encoding[''])
         )
 
 
@@ -56,20 +67,21 @@ class PopGenData:
                 print(f"[pop]={i}")
                 counts = self.genotypes.count_alleles(subpop = np.where((self.populations == i) == True)[0])
                 for j, count in enumerate(counts):
-                    print(f"{j+1} {count[0] + count[1]} {self.ploidy} {count[0]} {count[1]}")
+                    print(f"{j+1} {count[0] + count[1]} {self.ploidy()} {count[0]} {count[1]}")
                 print("")
 
 
     def test_to_genepop(self):
-        variant_ids = [f"locus_{x+1}" for x in range(self.n_loci)]
-
+        variant_ids = [f"locus_{x+1}" for x in range(self.n_loci())]
+        recoded_nucs = self.recode_nucleotides(missing=0)
+        
         samples = []
         populations = []
         genotypes = []
 
         for i, sample_id in enumerate(self.samples):
-            allele0 = self.nucleotide_recoded[:, i][:, 0].astype(str)
-            allele1 = self.nucleotide_recoded[:, i][:, 1].astype(str)
+            allele0 = recoded_nucs[:, i][:, 0].astype(str)
+            allele1 = recoded_nucs[:, i][:, 1].astype(str)
 
             genotype = ' '.join(np.char.add(np.char.add(np.zeros(len(allele0), dtype = 'int8').astype(str), allele0), 
                 np.char.add(np.zeros(len(allele1), dtype = 'int8').astype(str), allele1)))
@@ -101,10 +113,11 @@ class PopGenData:
     
     
     def test_to_structure(self, one_row_per_sample = False):
-                
+        recoded_nucs = self.recode_nucleotides(missing=-9)
+        
         if one_row_per_sample == True:
-            variant_ids0 = [f"locus_{x+1}_1" for x in range(self.n_loci)]
-            variant_ids1 = [f"locus_{x+1}_2" for x in range(self.n_loci)]
+            variant_ids0 = [f"locus_{x+1}_1" for x in range(self.n_loci())]
+            variant_ids1 = [f"locus_{x+1}_2" for x in range(self.n_loci())]
             
             variant_ids = np.ravel([variant_ids0, variant_ids1], order = 'F')
                
@@ -112,22 +125,22 @@ class PopGenData:
             print(f"\t\t{variant_cols}")
 
             for i, sample_id in enumerate(self.samples):
-                allele0 = self.nucleotide_recoded[:, i][:, 0]
-                allele1 = self.nucleotide_recoded[:, i][:, 1]
+                allele0 = recoded_nucs[:, i][:, 0]
+                allele1 = recoded_nucs[:, i][:, 1]
                                 
                 genotype = '\t'.join(str(allele) for allele in np.ravel([allele0, allele1], 
                                                                         order = 'F'))
                 print(f"{sample_id}\t{self.populations[i]}\t{genotype}")
             
         else:
-            variant_ids = [f"locus_{x+1}" for x in range(self.n_loci)]
+            variant_ids = [f"locus_{x+1}" for x in range(self.n_loci())]
             
             variant_cols = '\t'.join(str(variant_id) for variant_id in variant_ids)
             print(f"\t\t{variant_cols}")
 
             for i, sample_id in enumerate(self.samples):
-                allele0 = '\t'.join(str(nucleotide) for nucleotide in self.nucleotide_recoded[:, i][:, 0])
-                allele1 = '\t'.join(str(nucleotide) for nucleotide in self.nucleotide_recoded[:, i][:, 1])
+                allele0 = '\t'.join(str(nucleotide) for nucleotide in recoded_nucs[:, i][:, 0])
+                allele1 = '\t'.join(str(nucleotide) for nucleotide in recoded_nucs[:, i][:, 1])
                 
                 print(f"{sample_id}\t{self.populations[i]}\t{allele0}")
                 print(f"{sample_id}\t{self.populations[i]}\t{allele1}")
@@ -282,18 +295,18 @@ def create_test_data():
     
     test_genotypes = al.GenotypeArray(test_variants)
     
-    test_refs = np.array(['A', 'C', 'G', 'T'], dtype = object)
-    test_alts = np.array(['T', 'G', 'A', 'C'], dtype = object)
+    test_refs = Variants(np.array(['A', 'C', 'G', 'T'], dtype = object))
+    test_alts = Variants(np.array(['T', 'G', 'A', 'C'], dtype = object))
     
     test_data = PopGenData(samples=test_samples,
                       populations=test_pops,
                       genotypes=test_genotypes,
-                      ref_allele=test_refs,
-                      alt_allele=test_alts)
+                      ref_variants=test_refs,
+                      alt_variants=test_alts)
 
-    assert test_data.n_samples == 3
-    assert test_data.n_loci == 4
-    assert test_data.ploidy == 2
+    assert test_data.n_samples() == 3
+    assert test_data.n_loci() == 4
+    assert test_data.ploidy() == 2
     
     return test_data
 
@@ -314,7 +327,7 @@ def test_nucleotide_array():
           ['C', 'C'], 
           ['T', 'T']]], dtype = object
     )
-    assert (test_data.nucleotide_array == test_nucs).all()
+    assert (test_data.to_nucleotide_array() == test_nucs).all()
 
 
 def test_recode_nucleotides():
@@ -333,7 +346,7 @@ def test_recode_nucleotides():
           [3, 3], 
           [2, 2]]], dtype = int
     )
-    assert (test_data.nucleotide_recoded == test_recoded_nucs).all()
+    assert (test_data.recode_nucleotides() == test_recoded_nucs).all()
     
 
 def test_to_bayescan():
