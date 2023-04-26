@@ -127,3 +127,9 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# example output files
+examples/*.bayescan
+examples/*.genepop
+examples/*.structure
+
