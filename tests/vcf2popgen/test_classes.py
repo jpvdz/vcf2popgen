@@ -59,19 +59,21 @@ class PopGenData:
         )
 
 
-    def test_to_bayescan(self):
-            print(f"[loci]={len(self.genotypes)}\n")
-            print(f"[populations]={len(set(self.populations))}\n")
-            
-            for i in set(self.populations):
-                print(f"[pop]={i}")
-                counts = self.genotypes.count_alleles(subpop = np.where((self.populations == i) == True)[0])
-                for j, count in enumerate(counts):
-                    print(f"{j+1} {count[0] + count[1]} {self.ploidy()} {count[0]} {count[1]}")
-                print("")
+    def test_to_bayescan(self, output_file):
+        print(f"Writing genotypic data in BAYESCAN format to: {output_file}")
+        print(f"[loci]={len(self.genotypes)}\n")
+        print(f"[populations]={len(set(self.populations))}\n")
+        
+        for i in set(self.populations):
+            print(f"[pop]={i}")
+            counts = self.genotypes.count_alleles(subpop = np.where((self.populations == i) == True)[0])
+            for j, count in enumerate(counts):
+                print(f"{j+1} {count[0] + count[1]} {self.ploidy()} {count[0]} {count[1]}")
+            print("")
 
 
-    def test_to_genepop(self):
+    def test_to_genepop(self, output_file):
+        print(f"Writing genotypic data in GENEPOP format to: {output_file}")
         variant_ids = [f"locus_{x+1}" for x in range(self.n_loci())]
         recoded_nucs = self.recode_nucleotides(missing=0)
         
@@ -112,10 +114,11 @@ class PopGenData:
             print(f"{sample_id}, {genotype}")
     
     
-    def test_to_structure(self, one_row_per_sample = False):
+    def test_to_structure(self, output_file, one_row_per_sample = False):
         recoded_nucs = self.recode_nucleotides(missing=-9)
         
         if one_row_per_sample == True:
+            print(f"Writing genotypic data in STRUCTURE format (one row per sample) to: {output_file}")
             variant_ids0 = [f"locus_{x+1}_1" for x in range(self.n_loci())]
             variant_ids1 = [f"locus_{x+1}_2" for x in range(self.n_loci())]
             
@@ -133,6 +136,7 @@ class PopGenData:
                 print(f"{sample_id}\t{self.populations[i]}\t{genotype}")
             
         else:
+            print(f"Writing genotypic data in STRUCTURE format to: {output_file}")
             variant_ids = [f"locus_{x+1}" for x in range(self.n_loci())]
             
             variant_cols = '\t'.join(str(variant_id) for variant_id in variant_ids)
@@ -144,141 +148,6 @@ class PopGenData:
                 
                 print(f"{sample_id}\t{self.populations[i]}\t{allele0}")
                 print(f"{sample_id}\t{self.populations[i]}\t{allele1}")
-
-
-    # def to_bayescan(self, output_file):
-    #     """Write bi-allelic variant calls to BAYESCAN format.
-        
-    #     Parameters
-    #     ----------
-    #     output_file : str
-    #         Name or path of output file. 
-    #     """
-    #     with open(output_file, 'w') as fh:
-    #         fh.write(f"[loci]={len(self.genotypes)}\n\n")
-    #         fh.write(f"[populations]={len(set(self.populations))}\n\n")
-            
-    #         for i in set(self.populations):
-    #             fh.write(f"[pop]={i}\n")
-    #             counts = self.genotypes.count_alleles(subpop = np.where((self.populations == i) == True)[0])
-    #             for j, count in enumerate(counts):
-    #                 fh.write(f"{j+1} {count[0] + count[1]} {self.ploidy} {count[0]} {count[1]}\n")
-    #             fh.write("\n")
-                    
-    
-    # def to_genepop(self, output_file):
-    #     """Write bi-allelic variant calls to GENEPOP format.
-    
-    #     Parameters
-    #     ----------
-    #     data : dict
-    #         Dictionary containing arrays holding VCF data and population IDs.
-    #     output_file : str
-    #         Name or path of output file. 
-    #     """
-    #     gt = self.genotypes
-    #     ref_allele = self.ref_allele
-    #     alt_allele = self.alt_allele
-        
-    #     variant_ids = [f"variant_{x+1}" for x in range(len(self.ref_allele))] # TODO method that returns number of loci, samples, etc
-
-    #     samples = []
-    #     populations = []
-    #     genotypes = []
-
-    #     # TODO fix this section so it works with class attributes and methods
-    #     for i, sample_id in enumerate(self.samples):
-    #         allele0 = np.array(self._recode_nucleotides(gt[:, i][:, 0], missing = 0)).astype(str)
-    #         allele1 = np.array(self._recode_nucleotides(gt[:, i][:, 1], missing = 0)).astype(str)
-
-    #         genotype = ' '.join(np.char.add(np.char.add(np.zeros(len(allele0), dtype = 'int8').astype(str), allele0), 
-    #             np.char.add(np.zeros(len(allele1), dtype = 'int8').astype(str), allele1)))
-
-    #         samples.append(sample_id)
-    #         populations.append(data['populations'][i])
-    #         genotypes.append(genotype)
-
-    #     results = np.vstack((np.asarray(populations), np.asarray(samples), np.asarray(genotypes))).T
-    #     sorted_results = results[results[:, 0].argsort()]
-        
-    #     # with open(output_file, 'w') as fh:
-    #         # fh.write(f"Title line: GENEPOP file created with VCF2PopGen\n")
-
-    #     for variant_id in variant_ids:
-    #         print(f"{variant_id}\n")
-    #         # fh.write(f'{variant_id}\n')
-            
-    #     for i in range(0, len(sorted_results)):
-    #         pop_id = sorted_results[i][0]
-    #         sample_id = sorted_results[i][1]
-    #         genotype = sorted_results[i][2]
-
-    #         if i == 0:
-    #             # fh.write(f"POP\n")
-    #             print(f"POP\n")
-            
-    #         elif i > 0:
-    #             prev_pop = sorted_results[i-1][0]
-    #             if pop_id != prev_pop:
-    #                 # fh.write(f"POP\n")
-    #                 print(f"POP\n")
-            
-    #         # fh.write(f"{sample_id}, {genotype}\n")
-    #         print(f"{sample_id}, {genotype}\n")
-        
-        
-    # def to_structure(self, output_file, one_row_per_sample):
-    #     """Write bi-allelic variant calls to STRUCTURE format.
-        
-    #     Parameters
-    #     ----------
-    #     output_file : str
-    #         Name or path of output file.
-    #     one_row_per_sample : bool
-    #         Whether samples should be encoded on a single row, which results in two
-    #         columns per locus (one for each allele). Defaults to False.
-    #     """        
-    #     gt = self.genotypes
-    #     ref_allele = self.ref_allele
-    #     alt_allele = self.alt_allele
-        
-    #     if one_row_per_sample == True:
-    #         variant_ids0 = [f'variant_{x+1}_1' for x in range(len(self.ref_allele))] # TODO use loci counting method here
-    #         variant_ids1 = [f'variant_{x+1}_2' for x in range(len(self.ref_allele))] # TODO use loci counting method here
-    #         variant_ids = np.ravel([variant_ids0, variant_ids1], order = 'F')
-            
-    #         with open(output_file, 'w') as fh:
-    #             variant_cols = '\t'.join(str(variant_id) for variant_id in variant_ids)
-    #             fh.write(f'\t\t{variant_cols}\n')
-
-    #             for i, sample_id in enumerate(self.samples):
-    #                 alleles_recoded0 = recode_nucleotides(to_nucleotides(gt[:, i][:, 0], ref_allele, alt_allele))
-    #                 alleles_recoded1 = recode_nucleotides(to_nucleotides(gt[:, i][:, 1], ref_allele, alt_allele))
-    #                 alleles_recoded = np.ravel([alleles_recoded0, alleles_recoded1], order = 'F')
-
-    #                 pop = self.populations[i]
-                    
-    #                 alleles = '\t'.join(str(allele) for allele in alleles_recoded)
-    #                 fh.write(f'{sample_id}\t{pop}\t{alleles}\n')
-            
-    #     else:
-    #         variant_ids = [f"variant_{x+1}" for x in range(len(self.ref_allele))]
-            
-    #         with open(output_file, 'w') as fh:
-    #             variant_cols = '\t'.join(str(variant_id) for variant_id in variant_ids)
-    #             fh.write(f'\t\t{variant_cols}\n')
-
-    #             for i, sample_id in enumerate(self.samples):
-    #                 alleles_recoded0 = recode_nucleotides(to_nucleotides(gt[:, i][:, 0], ref_allele, alt_allele))
-    #                 alleles_recoded1 = recode_nucleotides(to_nucleotides(gt[:, i][:, 1], ref_allele, alt_allele))
-
-    #                 alleles0 = '\t'.join(str(allele) for allele in alleles_recoded0)
-    #                 alleles1 = '\t'.join(str(allele) for allele in alleles_recoded1)
-
-    #                 pop = self.populations[i]
-                    
-    #                 fh.write(f'{sample_id}\t{pop}\t{alleles0}\n')
-    #                 fh.write(f'{sample_id}\t{pop}\t{alleles1}\n')
 
 
 def create_test_data():
@@ -351,18 +220,18 @@ def test_recode_nucleotides():
 
 def test_to_bayescan():
     test_data = create_test_data()
-    test_data.test_to_bayescan()
+    test_data.test_to_bayescan(output_file="testout.bayescan")
     assert True
     
 
 def test_to_genepop():
     test_data = create_test_data()
-    test_data.test_to_genepop()
+    test_data.test_to_genepop(output_file="testout.genepop")
     assert True
     
 
 def test_to_structure():
     test_data = create_test_data()
-    test_data.test_to_structure()
-    test_data.test_to_structure(one_row_per_sample=True)
+    test_data.test_to_structure(output_file="testout.str")
+    test_data.test_to_structure(output_file="testout.str", one_row_per_sample=True)
     assert True
