@@ -131,6 +131,8 @@ class PopGenData:
         output_file : str
             Name of output file. 
         """
+        print(f"Writing genotypic data in BAYESCAN format to: {output_file}")
+        
         with open(output_file, 'w') as fh:
             fh.write(f"[loci]={len(self.genotypes)}\n\n")
             fh.write(f"[populations]={len(set(self.populations))}\n\n")
@@ -151,6 +153,8 @@ class PopGenData:
         output_file : str
             Name of output file. 
         """
+        print(f"Writing genotypic data in GENEPOP format to: {output_file}")
+        
         variant_ids = [f"locus_{x+1}" for x in range(self.n_loci())]
         recoded_nucs = self.recode_nucleotides(missing=0)
 
@@ -208,6 +212,8 @@ class PopGenData:
         recoded_nucs = self.recode_nucleotides(missing=-9)
         
         if one_row_per_sample == True:
+            print(f"Writing genotypic data in STRUCTURE format (one row per sample) to: {output_file}")
+
             variant_ids0 = [f"locus_{x+1}_1" for x in range(self.n_loci())]
             variant_ids1 = [f"locus_{x+1}_2" for x in range(self.n_loci())]
             
@@ -225,6 +231,8 @@ class PopGenData:
                     fh.write(f"{sample_id}\t{self.populations[i]}\t{genotype}\n")
             
         else:
+            print(f"Writing genotypic data in STRUCTURE format to: {output_file}")
+
             variant_ids = [f"locus_{x+1}" for x in range(self.n_loci())]
             variant_cols = '\t'.join(str(variant_id) for variant_id in variant_ids)
             with open(output_file, 'w') as fh:

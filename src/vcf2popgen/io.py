@@ -25,6 +25,7 @@ def read(vcf_file : str, sample_map_file : str, header : bool = True) -> PopGenD
     sample_map = {}
 
     try:
+        print(f"Reading sample-population mappings from: {sample_map_file}")
         with open(sample_map_file, 'r') as fh:
             for i, line in enumerate(fh):
                 if i == 0 and header == True:
@@ -39,6 +40,7 @@ def read(vcf_file : str, sample_map_file : str, header : bool = True) -> PopGenD
             )
     
     try: 
+        print(f"Reading genotypic data from: {vcf_file}")
         vcf = al.read_vcf(vcf_file, alt_number=1, samples=sample_map.keys())
     except:
         raise ValueError(
