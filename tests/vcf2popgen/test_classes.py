@@ -59,7 +59,7 @@ class PopGenData:
         )
 
 
-    def test_to_bayescan(self, output_file):
+    def to_bayescan(self, output_file):
         print(f"Writing genotypic data in BAYESCAN format to: {output_file}")
         print(f"[loci]={len(self.genotypes)}\n")
         print(f"[populations]={len(set(self.populations))}\n")
@@ -72,7 +72,7 @@ class PopGenData:
             print("")
 
 
-    def test_to_genepop(self, output_file):
+    def to_genepop(self, output_file):
         print(f"Writing genotypic data in GENEPOP format to: {output_file}")
         variant_ids = [f"locus_{x+1}" for x in range(self.n_loci())]
         recoded_nucs = self.recode_nucleotides(missing=0)
@@ -114,7 +114,7 @@ class PopGenData:
             print(f"{sample_id}, {genotype}")
     
     
-    def test_to_structure(self, output_file, one_row_per_sample = False):
+    def to_structure(self, output_file, one_row_per_sample = False):
         recoded_nucs = self.recode_nucleotides(missing=-9)
         
         if one_row_per_sample == True:
