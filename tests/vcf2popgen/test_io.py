@@ -38,10 +38,20 @@ def read(vcf_file : str, sample_map_file : str, header : bool = True) -> PopGenD
     
     return data
 
+
 def test_reading_from_vcf():
     test_vcf = os.path.join(os.path.dirname(__file__), 'test.vcf')
     test_sample_map = os.path.join(os.path.dirname(__file__), 'test.csv')
     data = read(vcf_file=test_vcf,
+                sample_map_file=test_sample_map,
+                header=True)
+    assert isinstance(data, PopGenData)
+
+
+def test_reading_from_vcf_gz():
+    test_vcf_gz = os.path.join(os.path.dirname(__file__), 'test.vcf.gz')
+    test_sample_map = os.path.join(os.path.dirname(__file__), 'test.csv')
+    data = read(vcf_file=test_vcf_gz,
                 sample_map_file=test_sample_map,
                 header=True)
     assert isinstance(data, PopGenData)
