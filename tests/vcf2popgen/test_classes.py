@@ -1,16 +1,15 @@
 import allel as al
 import numpy as np
-
+        
 class Variants:
-    def __init__(self, variants):
-        self.variants = variants
+    def __init__(self, chromosome, position, ref_alleles, alt_alleles):
+        self.chromosome = chromosome
+        self.position = position
+        self.alleles = {'REF': ref_alleles,
+                        'ALT': alt_alleles}
     
-    
-    def to_ndarray(self, n_loci, n_samples, ploidy):
-        return np.repeat(
-            self.variants, 
-            n_samples * ploidy,
-            axis = 0).reshape(
+    def to_ndarray(self, allele_type, n_loci, n_samples, ploidy):
+        return np.repeat(self.alleles[allele_type], n_samples * ploidy, axis = 0).reshape(
                 n_loci,
                 n_samples,
                 ploidy
@@ -18,12 +17,11 @@ class Variants:
         
 
 class PopGenData:
-    def __init__(self, samples, populations, genotypes : al.GenotypeArray, ref_variants : Variants, alt_variants : Variants):
+    def __init__(self, samples, populations, genotypes : al.GenotypeArray, variants : Variants):
         self.samples = samples
         self.populations = populations
         self.genotypes = genotypes
-        self.ref_variants = ref_variants
-        self.alt_variants = alt_variants
+        self.variants = variants
         
 
     def n_loci(self):
@@ -39,8 +37,8 @@ class PopGenData:
 
     
     def to_nucleotide_array(self):
-        ref_ndarray = self.ref_variants.to_ndarray(self.n_loci(), self.n_samples(), self.ploidy())
-        alt_ndarray = self.alt_variants.to_ndarray(self.n_loci(), self.n_samples(), self.ploidy())
+        ref_ndarray = self.variants.to_ndarray('REF', self.n_loci(), self.n_samples(), self.ploidy())
+        alt_ndarray = self.variants.to_ndarray('ALT', self.n_loci(), self.n_samples(), self.ploidy())
         return (self.genotypes == 0) * ref_ndarray + (self.genotypes == 1) * alt_ndarray
     
     
@@ -164,14 +162,21 @@ def create_test_data():
     
     test_genotypes = al.GenotypeArray(test_variants)
     
-    test_refs = Variants(np.array(['A', 'C', 'G', 'T'], dtype = object))
-    test_alts = Variants(np.array(['T', 'G', 'A', 'C'], dtype = object))
+    test_chroms = np.array(['Chr1', 'Chr1', 'Chr2', 'Chr3'])
+    test_pos = np.array([1,50, 30, 44])
+    
+    test_refs = np.array(['A', 'C', 'G', 'T'], dtype = object)
+    test_alts = np.array(['T', 'G', 'A', 'C'], dtype = object)
+    
+    test_variants = Variants(chromosome=test_chroms,
+                             position=test_pos,
+                             ref_alleles=test_refs,
+                             alt_alleles=test_alts)
     
     test_data = PopGenData(samples=test_samples,
                       populations=test_pops,
                       genotypes=test_genotypes,
-                      ref_variants=test_refs,
-                      alt_variants=test_alts)
+                      variants=test_variants)
 
     assert test_data.n_samples() == 3
     assert test_data.n_loci() == 4
@@ -220,18 +225,18 @@ def test_recode_nucleotides():
 
 def test_to_bayescan():
     test_data = create_test_data()
-    test_data.test_to_bayescan(output_file="testout.bayescan")
+    test_data.to_bayescan(output_file="testout.bayescan")
     assert True
     
 
 def test_to_genepop():
     test_data = create_test_data()
-    test_data.test_to_genepop(output_file="testout.genepop")
+    test_data.to_genepop(output_file="testout.genepop")
     assert True
     
 
 def test_to_structure():
     test_data = create_test_data()
-    test_data.test_to_structure(output_file="testout.str")
-    test_data.test_to_structure(output_file="testout.str", one_row_per_sample=True)
+    test_data.to_structure(output_file="testout.str")
+    test_data.to_structure(output_file="testout.str", one_row_per_sample=True)
     assert True
