@@ -72,7 +72,7 @@ class PopGenData:
 
     def to_genepop(self, output_file):
         print(f"Writing genotypic data in GENEPOP format to: {output_file}")
-        variant_ids = [f"locus_{x+1}" for x in range(self.n_loci())]
+        variant_ids = [f"locus_{x+1}_{self.variants.chromosome[x]}_{self.variants.position[x]}" for x in range(self.n_loci())]
         recoded_nucs = self.recode_nucleotides(missing=0)
         
         samples = []
@@ -117,8 +117,8 @@ class PopGenData:
         
         if one_row_per_sample == True:
             print(f"Writing genotypic data in STRUCTURE format (one row per sample) to: {output_file}")
-            variant_ids0 = [f"locus_{x+1}_1" for x in range(self.n_loci())]
-            variant_ids1 = [f"locus_{x+1}_2" for x in range(self.n_loci())]
+            variant_ids0 = [f"locus_{x+1}_1_{self.variants.chromosome[x]}_{self.variants.position[x]}" for x in range(self.n_loci())]
+            variant_ids1 = [f"locus_{x+1}_2_{self.variants.chromosome[x]}_{self.variants.position[x]}" for x in range(self.n_loci())]
             
             variant_ids = np.ravel([variant_ids0, variant_ids1], order = 'F')
                
@@ -135,7 +135,7 @@ class PopGenData:
             
         else:
             print(f"Writing genotypic data in STRUCTURE format to: {output_file}")
-            variant_ids = [f"locus_{x+1}" for x in range(self.n_loci())]
+            variant_ids = [f"locus_{x+1}_{self.variants.chromosome[x]}_{self.variants.position[x]}" for x in range(self.n_loci())]
             
             variant_cols = '\t'.join(str(variant_id) for variant_id in variant_ids)
             print(f"\t\t{variant_cols}")
@@ -162,7 +162,7 @@ def create_test_data():
     
     test_genotypes = al.GenotypeArray(test_variants)
     
-    test_chroms = np.array(['Chr1', 'Chr1', 'Chr2', 'Chr3'])
+    test_chroms = np.array(['chr1', 'chr1', 'chr2', 'chr3'])
     test_pos = np.array([1,50, 30, 44])
     
     test_refs = np.array(['A', 'C', 'G', 'T'], dtype = object)
