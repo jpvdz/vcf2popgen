@@ -49,7 +49,7 @@ def read(vcf_file : str, sample_map_file : str, header : bool = True) -> PopGenD
             )
     
     data = PopGenData(samples=vcf['samples'], 
-                      populations=np.array(list(sample_map.values()), dtype=int), 
+                      populations=np.array([sample_map[x] for x in vcf['samples']]), 
                       genotypes=al.GenotypeArray(vcf['calldata/GT']), 
                       variants=Variants(chromosome=vcf['variants/CHROM'],
                                         position=vcf['variants/POS'],
