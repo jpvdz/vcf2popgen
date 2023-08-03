@@ -3,42 +3,58 @@ import numpy as np
 import numpy.typing as npt
 
 class Variants:
-    """An object that holds a one-dimensional array of variants. 
+    """A class that holds the chromosome, position, reference allele and alternate 
+    allele of each variant. 
     
     Parameters
     ----------
-    variants
-        A NumPy array containing variants encoded as nucleotides.
+    chromosome : npt.ArrayLike
+        A NumPy array containing the chromosome of each variant.
+    position : npt.ArrayLike
+        A NumPy array containing the position of each variant.
+    ref_alleles : npt.ArrayLike
+        A NumPy array containing reference alleles encoded as nucleotides.
+    alt_alleles : npt.ArrayLike
+        A NumPy array containing alternate alleles encoded as nucleotides.
     """
-    def __init__(self, variants : npt.ArrayLike):
-        self.variants = variants
+    def __init__(self, chromosome : npt.ArrayLike, position : npt.ArrayLike, ref_alleles : npt.ArrayLike, alt_alleles : npt.ArrayLike):
+        self.chromosome = chromosome
+        self.position = position
+        self.alleles = {'REF': ref_alleles,
+                        'ALT': alt_alleles}
     
     
-    def to_matrix(self, n_loci : int, n_samples : int, n_alleles : int) -> npt.ArrayLike:
-        """Convert a one-dimensional array containing variants to a three-dimensional matrix, 
+    def to_ndarray(self, allele_type, n_loci, n_samples, ploidy):
+        """Convert a one-dimensional array containing variants to a three-dimensional array, 
         suitable for multiplying with a GenotypeArray. 
         
         Parameters
         ----------
+        allele_type : str
+            The allele type to convert. Valid options are 'REF', which selects the reference
+            alleles, or 'ALT', which selects the alternate alleles. 
         n_loci : int
             Number of loci (first dimension).
         n_samples : int
             Number of samples (second dimension).
-        n_alleles : int
+        ploidy : int
             Ploidy (third dimension).
             
         Returns
         -------
-        variants_matrix : npt.ArrayLike
+        variants_ndarray : npt.ArrayLike
             A three-dimensional matrix containing variants encoded as nucleotides.
         """
-        variants_matrix = np.repeat(self.variants, n_samples * n_alleles, axis = 0).reshape(
-            n_loci, n_samples, n_alleles)
-        return variants_matrix
+        variants_ndarray = np.repeat(self.alleles[allele_type], n_samples * ploidy, axis = 0).reshape(
+                n_loci,
+                n_samples,
+                ploidy
+            )
+        return variants_ndarray
         
 
 class PopGenData:
-    """An object that holds bi-allelic SNPs from a set of samples from one or
+    """A class that holds bi-allelic SNPs from a set of samples from one or
     more populations.
     
     Parameters
@@ -49,24 +65,20 @@ class PopGenData:
         A NumPy array containing population IDs encoded as integers.
     genotypes : al.GenotypeArray
         A GenotypeArray object.
-    ref_variants : Variants
-        A Variant object holding reference alleles.
-    alt_variants : Variants
-        A Variant object holding alternate alleles.
+    variants : Variants
+        A Variants object.
         
     """
     def __init__(self, 
                  samples : npt.ArrayLike, 
                  populations : npt.ArrayLike, 
                  genotypes : al.GenotypeArray, 
-                 ref_variants : Variants, 
-                 alt_variants : Variants):
+                 variants : Variants):
         self.samples = samples
         self.populations = populations
         self.genotypes = genotypes
-        self.ref_variants = ref_variants
-        self.alt_variants = alt_variants
-        
+        self.variants = variants
+  
 
     def n_loci(self):
         """Return the total number of loci."""
@@ -78,16 +90,16 @@ class PopGenData:
         return self.genotypes.shape[1]
     
     
-    def n_alleles(self):
-        """Return the number of alleles per locus."""
+    def ploidy(self):
+        """Return the ploidy of a locus."""
         return self.genotypes.shape[2]
 
     
-    def to_nucleotides(self):
-        """Return the genotype data as a matrix of nucleotides encoded as characters."""
-        ref_matrix = self.ref_variants.to_matrix(self.n_loci(), self.n_samples(), self.n_alleles())
-        alt_matrix = self.alt_variants.to_matrix(self.n_loci(), self.n_samples(), self.n_alleles())
-        return (self.genotypes == 0) * ref_matrix + (self.genotypes == 1) * alt_matrix
+    def to_nucleotide_array(self):
+        """Return the genotype data as an array of nucleotides encoded as characters."""
+        ref_ndarray = self.variants.to_ndarray('REF', self.n_loci(), self.n_samples(), self.ploidy())
+        alt_ndarray = self.variants.to_ndarray('ALT', self.n_loci(), self.n_samples(), self.ploidy())
+        return (self.genotypes == 0) * ref_ndarray + (self.genotypes == 1) * alt_ndarray
     
     
     def recode_nucleotides(self, missing : int = -9) -> npt.ArrayLike:
@@ -103,25 +115,18 @@ class PopGenData:
         recoded_nucleotides : npt.ArrayLike
             A matrix containing genotypic data with nucleotides encoded as integers.
         """
-        encoding = {'A': 1, 'T': 2, 'C': 3, 'G': 4}
+        encoding = {'A': 1, 'T': 2, 'C': 3, 'G': 4, '' : missing}
+
+        nuc_array = self.to_nucleotide_array()
         
-        if missing not in encoding:
-            nucleotides = self.to_nucleotides()
-            
-            encoding[''] = missing
-            
-            recoded_nucleotides = (
-                ((nucleotides == 'A') * encoding['A']) +
-                ((nucleotides == 'T') * encoding['T']) +
-                ((nucleotides == 'C') * encoding['C']) +
-                ((nucleotides == 'G') * encoding['G']) +
-                ((nucleotides == '') * encoding[''])
-            )
-            
-            return recoded_nucleotides
+        return (
+            ((nuc_array == 'A') * encoding['A']) +
+            ((nuc_array == 'T') * encoding['T']) +
+            ((nuc_array == 'C') * encoding['C']) +
+            ((nuc_array == 'G') * encoding['G']) +
+            ((nuc_array == '') * encoding[''])
+        )
         
-        else:
-            print("Invalid encoding for missing data.")
 
     def to_bayescan(self, output_file : str) -> None:
         """Write bi-allelic SNPs to an output file in BAYESCAN format.
@@ -141,7 +146,7 @@ class PopGenData:
                 fh.write(f"[pop]={i}\n")
                 counts = self.genotypes.count_alleles(subpop = np.where((self.populations == i) == True)[0])
                 for j, count in enumerate(counts):
-                    fh.write(f"{j+1} {count[0] + count[1]} {self.n_alleles()} {count[0]} {count[1]}\n")
+                    fh.write(f"{j+1} {count[0] + count[1]} {self.ploidy()} {count[0]} {count[1]}\n")
                 fh.write("\n")
                     
     
@@ -155,7 +160,7 @@ class PopGenData:
         """
         print(f"Writing genotypic data in GENEPOP format to: {output_file}")
         
-        variant_ids = [f"locus_{x+1}" for x in range(self.n_loci())]
+        variant_ids = [f"snp{x+1}_{self.variants.chromosome[x]}_{self.variants.position[x]}" for x in range(self.n_loci())]
         recoded_nucs = self.recode_nucleotides(missing=0)
 
         samples = []
@@ -214,8 +219,8 @@ class PopGenData:
         if one_row_per_sample == True:
             print(f"Writing genotypic data in STRUCTURE format (one row per sample) to: {output_file}")
 
-            variant_ids0 = [f"locus_{x+1}_1" for x in range(self.n_loci())]
-            variant_ids1 = [f"locus_{x+1}_2" for x in range(self.n_loci())]
+            variant_ids0 = [f"snp{x+1}a_{self.variants.chromosome[x]}_{self.variants.position[x]}" for x in range(self.n_loci())]
+            variant_ids1 = [f"snp{x+1}b_{self.variants.chromosome[x]}_{self.variants.position[x]}" for x in range(self.n_loci())]
             
             variant_ids = np.ravel([variant_ids0, variant_ids1], order = 'F')
             variant_cols = '\t'.join(str(variant_id) for variant_id in variant_ids)
@@ -233,7 +238,7 @@ class PopGenData:
         else:
             print(f"Writing genotypic data in STRUCTURE format to: {output_file}")
 
-            variant_ids = [f"locus_{x+1}" for x in range(self.n_loci())]
+            variant_ids = [f"snp{x+1}_{self.variants.chromosome[x]}_{self.variants.position[x]}" for x in range(self.n_loci())]
             variant_cols = '\t'.join(str(variant_id) for variant_id in variant_ids)
             with open(output_file, 'w') as fh:
                 fh.write(f"\t\t{variant_cols}\n")
