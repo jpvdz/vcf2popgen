@@ -30,8 +30,9 @@ def read(vcf_file : str, sample_map_file : str, header : bool = True) -> PopGenD
     formatted and/or has the correct file extension."""
             )
     
-    data = PopGenData(samples=vcf['samples'], 
-                      populations=np.array(list(sample_map.values()), dtype=int), 
+    data = PopGenData(samples=vcf['samples'],
+                      populations=np.array([sample_map[x] for x in vcf['samples']]), 
+                      #populations=np.array(list(sample_map.values()), dtype=int), 
                       genotypes=al.GenotypeArray(vcf['calldata/GT']), 
                       variants=Variants(chromosome=vcf['variants/CHROM'],
                                         position=vcf['variants/POS'],
@@ -56,3 +57,17 @@ def test_reading_from_vcf_gz():
                 sample_map_file=test_sample_map,
                 header=True)
     assert isinstance(data, PopGenData)
+    
+    
+def test_sample_pop_pairing():
+    sample_map = {'sample1': 1,
+                  'sample2': 1,
+                  'sample3': 2,
+                  'sample4': 2,
+                  'sample5': 3,
+                  'sample6': 3,
+                  }
+    samples = ['sample6', 'sample3', 'sample1']
+    expected_pops = [3,2,1]
+    pops = [sample_map[x] for x in samples]
+    assert expected_pops == pops
