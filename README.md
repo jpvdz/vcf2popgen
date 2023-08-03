@@ -7,7 +7,7 @@ Requires [scikit-allel](https://scikit-allel.readthedocs.io/en/stable/) and [Num
 ## How to install
 Simply download the latest release and install either the source distribution (`.tar.gz`) or built distribution (`.whl`) using `pip`:
 ```
-pip install /path/to/dir/vcf2popgen-0.1.0.tar.gz
+pip install /path/to/dir/vcf2popgen-x.y.z.tar.gz
 ```
 
 ## How to use
